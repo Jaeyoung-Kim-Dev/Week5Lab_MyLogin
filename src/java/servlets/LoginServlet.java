@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import models.AccountService;
+import models.User;
 
 public class LoginServlet extends HttpServlet {
 
@@ -16,13 +17,22 @@ public class LoginServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession();               
-        
+        HttpSession session = request.getSession();
+
         String logout = request.getParameter("logout");
 
         if (logout != null) {
-            session.invalidate();            
-            request.setAttribute("message", "The user has successfully logged out");            
+            session.invalidate();
+            request.setAttribute("message", "The user has successfully logged out");
+            getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
+        }
+
+        User user = (User) session.getAttribute("user");
+
+        if (user != null) {
+            request.getSession().setAttribute("user", user);
+            response.sendRedirect("home");
+            return;
         }
         
         getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
@@ -33,17 +43,30 @@ public class LoginServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
-        
-        
+
+        /*
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            user = new User();
+        }
+         */
         String username = request.getParameter("username");
         String password = request.getParameter("password");
-        boolean foundAccount = false;
-                
-        User user1 = accountService.login(username, password);
+
         AccountService accountService = new AccountService();
-        User user = new User();
-        
-        
+        User user = accountService.login(username, password);
+
+        if (user == null) {
+            request.setAttribute("username", username);
+            request.setAttribute("password", password);
+            request.setAttribute("message", "Ivalid login");
+            getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
+        } else {
+            session.setAttribute("user", user);
+            response.sendRedirect("home");
+        }
+
+        /*
         for (int i =0 ; i < accountServlet.size(); i++ ) {
             String matchUsername = accountServlet.get(i).getUsername();
             String matchPassword = accountServlet.get(i).getPassword();
@@ -51,7 +74,7 @@ public class LoginServlet extends HttpServlet {
             login (matchUsername, matchPassword);
             
             if (matchUsername && matchPassword) {
-                foundAccount = true;
+                //foundAccount = true;
                 request.setAttribute("username", accountServlet.get(i).getUsername());
                 getServletContext().getRequestDispatcher("/WEB-INF/home.jsp").forward(request, response);
             }
@@ -87,6 +110,5 @@ public class LoginServlet extends HttpServlet {
 
         getServletContext().getRequestDispatcher("/WEB-INF/viewnote.jsp").forward(request, response);
          */
-    
-    
+    }
 }
